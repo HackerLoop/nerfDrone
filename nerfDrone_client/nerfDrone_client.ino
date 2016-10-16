@@ -10,9 +10,9 @@ int motorsPin = D1;
 int shotPin = D2;
 int blastPin = D3;
 
-int motorsState = 0;
-int shotState = 0;
-int blastState = 0;
+bool motorsState = false;
+bool shotState = false;
+bool blastState = false;
 
 String endpoint = String();
 
@@ -24,34 +24,32 @@ void setup()
 }
 
 void loop() {
-  
-  motorsState = digitalRead(motorsPin);
-  if ( motorsState == HIGH ) {
-    endpoint = "/motors/on";
-    request(endpoint);
-    delay(200);
+  if (edge(motorsPin, &motorsState)) {
+    request(motorsState ? "/motors/on" : "/motors/off");
+  }
+  if (edge(shotPin, &shotState)) {
+    if (shotState) {
+      request("/shotState/on");
     }
-  else {
-    endpoint = "/motors/off";
-    request(endpoint);
+  }
+  if (edge(blastPin, &blastState)) {
+    if (blastState) {
+      request("/blast/on");
     }
-    delay(200);
-
+  }
+  delay(200);
 }
 
-void readTriggers() {
-  
-  shotState = digitalRead(shotPin);
-  blastState = digitalRead(blastPin);
-  
-  if (shotState == HIGH) {
-    endpoint =  "/shot";    
-    request(endpoint);
-   }
-  if (blastState == HIGH) {    
-    endpoint =  "/blast";    
-    request(endpoint);
-   }
+bool edge(int pin, bool *currentState) {
+  bool pinState = digitalRead(pin);
+  if ( pinState == HIGH && !currentlyOn ) {
+    *currentlyOn = true;
+    return true;
+  } else if ( pinState == LOW && currentlyOn ) {
+    *currentlyOn = false;
+    return true;
+  }
+  return false;
 }
 
 void initHardware() {
